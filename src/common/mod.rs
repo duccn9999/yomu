@@ -5,7 +5,5 @@ pub mod common {
     use crate::Epub;
     pub trait File<T> {
         fn unzip(&self, path: &Path) -> Epub;
-
-        fn merge(&self, data: RefCell<Option<T>>);
     }
 }

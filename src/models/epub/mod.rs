@@ -163,17 +163,14 @@ mod epub {
     use std::collections::HashMap;
     use std::io::Read;
     use std::path::Path;
+    use std::rc::Rc;
     use zip::ZipArchive;
     impl File<Epub> for Epub {
         fn unzip(&self, path: &Path) -> Epub {
             let mut files_map = import_data(path);
             let toc_ncx = files_map.get_mut("toc.ncx").expect("toc.ncx not found!");
-            let nap_map = define_structure(toc_ncx);
-
-            todo!()
-        }
-
-        fn merge(&self, data: RefCell<Option<Epub>>) {
+            let nav_map = define_structure(toc_ncx);
+            let file_content = merge(nav_map, files_map);
             todo!()
         }
     }
@@ -200,5 +197,9 @@ mod epub {
     fn define_structure(content: &str) -> Result<NavMap, quick_xml::DeError> {
         let table_of_content: Toc = quick_xml::de::from_str(content)?;
         Ok(table_of_content.nav_map)
+    }
+
+    fn merge(nav_map: NavMap, files_map: HashMap<String, String>) -> Rc<RefCell<String>> {
+        todo!()
     }
 }
