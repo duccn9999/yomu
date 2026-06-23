@@ -155,16 +155,6 @@ struct Content {
     src: String,
 }
 
-enum tags {
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6,
-    a,
-    b,
-}
 mod epub {
     use crate::common::common::File;
     use crate::epub::Epub;
@@ -179,16 +169,14 @@ mod epub {
     use std::rc::Rc;
     use zip::ZipArchive;
     impl File<Epub> for Epub {
-        fn unzip(&self, path: &Path) -> () {
+        fn unzip(&self, path: &Path) -> Vec<String> {
             let mut files_map = import_data(path);
             let toc_ncx = files_map.get_mut("toc.ncx").expect("toc.ncx not found!");
             let nav_map = define_structure(toc_ncx);
             let raw_content = merge(files_map);
             let extracted_content = remove_tags(raw_content);
 
-            for line in &extracted_content {
-                println!("{line}")
-            }
+            extracted_content
         }
     }
 
@@ -220,8 +208,8 @@ mod epub {
     fn merge(files_map: HashMap<String, String>) -> Rc<RefCell<String>> {
         let total = files_map.values().map(|v| v.len()).sum();
         let mut content = String::with_capacity(total);
-        for v in files_map.into_values() {
-            content.push_str(&v);
+        for k in files_map.values() {
+            content.push_str(k);
         }
 
         Rc::new(RefCell::new(content))
@@ -233,12 +221,15 @@ mod epub {
     fn remove_tags(raw_content: Rc<RefCell<String>>) -> Vec<String> {
         let mut lines = Vec::<String>::new();
         let document = Html::parse_document(&raw_content.borrow());
-        let selector = Selector::parse("h1, h2, h3, h4, h5, h6, p, b, img").unwrap();
+        let body_selector = Selector::parse("body").unwrap();
+        let p_selector = Selector::parse("p").unwrap();
 
-        for node in document.select(&selector) {
-            let text = node.text().collect::<String>().trim().to_string();
-            if !text.is_empty() {
-                lines.push(text);
+        if let Some(body) = document.select(&body_selector).next() {
+            for el in body.select(&p_selector) {
+                let text = el.text().collect::<String>().trim().to_string();
+                if !text.is_empty() {
+                    lines.push(text);
+                }
             }
         }
         lines
